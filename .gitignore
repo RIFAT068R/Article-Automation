@@ -1,0 +1,25 @@
+# Local environment and private key files
+.env
+*.env
+*env.txt
+rifat env.txt
+
+# Python cache and byte-compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Node dependencies and build artifacts
+node_modules/
+dist/
+dist-ssr/
+*.local
+build/
+
+# IDE and system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
