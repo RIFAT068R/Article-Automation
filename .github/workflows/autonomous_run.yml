@@ -37,7 +37,7 @@ jobs:
       env:
         # These keys will be securely added to your GitHub Repository Secrets!
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        HF_API_KEY: ${{ secrets.HF_API_KEY }}
+        PIXAZO_API_KEY: ${{ secrets.PIXAZO_API_KEY }}
         GOOGLE_SHEET_WEBAPP_URL: ${{ secrets.GOOGLE_SHEET_WEBAPP_URL }}
       run: |
         python backend/main.py

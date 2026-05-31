@@ -7,7 +7,7 @@ load_dotenv()
 
 # API Keys & Configurations
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-HF_API_KEY = os.getenv("HF_API_KEY", "")
+PIXAZO_API_KEY = os.getenv("PIXAZO_API_KEY", "b38ee7a3d7464c4fb3d1210c1a36b35f")
 GOOGLE_SHEET_WEBAPP_URL = os.getenv("GOOGLE_SHEET_WEBAPP_URL", "")
 
 # Directory Structures

@@ -2,7 +2,7 @@ import requests
 import logging
 import uuid
 import google.generativeai as genai
-from backend.config import HF_API_KEY, GEMINI_API_KEY, ASSETS_DIR
+from backend.config import PIXAZO_API_KEY, GEMINI_API_KEY, ASSETS_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -46,41 +46,54 @@ def generate_visual_prompt(topic, brief):
 
 def generate_flux_cover(topic, brief):
     """
-    Calls the Hugging Face Serverless API with FLUX.1-schnell to generate the cover image.
+    Calls the Pixazo.ai Gateway API with FLUX.1-schnell to generate the cover image.
     Saves the image locally inside the public/assets directory of the repository.
-    Falls back to high-quality free stock photos if Hugging Face fails or API key is missing.
+    Falls back to high-quality free stock photos if Pixazo fails or API key is missing.
     """
     filename = f"cover_{uuid.uuid4().hex[:10]}.png"
     save_path = ASSETS_DIR / filename
     
-    # 1. Check if Hugging Face API key is available
-    if not HF_API_KEY:
-        logging.warning("HF_API_KEY is not configured. Falling back to high-quality stock photo.")
+    # 1. Check if Pixazo API key is available
+    if not PIXAZO_API_KEY:
+        logging.warning("PIXAZO_API_KEY is not configured. Falling back to high-quality stock photo.")
         return get_stock_photo_fallback(topic)
         
     visual_prompt = generate_visual_prompt(topic, brief)
-    api_url = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell"
-    headers = {"Authorization": f"Bearer {HF_API_KEY}"}
-    payload = {"inputs": visual_prompt}
+    api_url = "https://gateway.pixazo.ai/flux-1-schnell/v1/getData"
+    headers = {
+        "Ocp-Apim-Subscription-Key": PIXAZO_API_KEY,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "prompt": visual_prompt,
+        "width": 1024,
+        "height": 1024
+    }
     
     try:
-        logging.info("Sending requests to Hugging Face FLUX.1-schnell API...")
+        logging.info("Sending request to Pixazo.ai FLUX.1-schnell API...")
         response = requests.post(api_url, headers=headers, json=payload, timeout=45)
         
-        if response.status_code == 200 and response.content:
-            # Save the binary image content locally
-            with open(save_path, "wb") as f:
-                f.write(response.content)
+        if response.status_code == 200:
+            res_data = response.json()
+            image_url = res_data.get("output")
             
-            logging.info(f"Successfully generated and saved cover image locally: {save_path}")
-            # Returns the public asset path that Vercel will resolve statically!
-            return f"/assets/{filename}"
+            if image_url:
+                logging.info(f"Pixazo generated image URL successfully: {image_url}")
+                logging.info("Downloading image bytes from Cloudflare storage...")
+                img_response = requests.get(image_url, timeout=20)
+                
+                if img_response.status_code == 200 and img_response.content:
+                    with open(save_path, "wb") as f:
+                        f.write(img_response.content)
+                    logging.info(f"Successfully generated and saved cover image locally: {save_path}")
+                    return f"/assets/{filename}"
             
-        logging.warning(f"Hugging Face API returned status code {response.status_code}. Response: {response.text}")
+        logging.warning(f"Pixazo.ai API returned status code {response.status_code}. Response: {response.text}")
     except Exception as e:
-        logging.error(f"Error during Hugging Face FLUX generation: {e}")
+        logging.error(f"Error during Pixazo FLUX generation: {e}")
         
-    logging.info("Falling back to stock photo library due to Hugging Face API error.")
+    logging.info("Falling back to stock photo library due to Pixazo.ai API error.")
     return get_stock_photo_fallback(topic)
 
 def get_stock_photo_fallback(topic):
